@@ -1,8 +1,8 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +13,24 @@ func main() {
 	addr := ":" + os.Getenv("PORT")
 	http.HandleFunc("/", handle)
 	log.Fatal(http.ListenAndServe(addr, nil))
+}
+
+type Ticker struct {
+	ID               string      `json:"id"`
+	Name             string      `json:"name"`
+	Symbol           string      `json:"symbol"`
+	Rank             string      `json:"rank"`
+	PriceUsd         string      `json:"price_usd"`
+	PriceBtc         string      `json:"price_btc"`
+	Two4HVolumeUsd   string      `json:"24h_volume_usd"`
+	MarketCapUsd     string      `json:"market_cap_usd"`
+	AvailableSupply  string      `json:"available_supply"`
+	TotalSupply      string      `json:"total_supply"`
+	MaxSupply        interface{} `json:"max_supply"`
+	PercentChange1H  string      `json:"percent_change_1h"`
+	PercentChange24H string      `json:"percent_change_24h"`
+	PercentChange7D  string      `json:"percent_change_7d"`
+	LastUpdated      string      `json:"last_updated"`
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
@@ -45,13 +63,15 @@ func handle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
+	tickers := []Ticker{}
+	decodeErr := json.NewDecoder(res.Body).Decode(&tickers)
+
+	if decodeErr != nil {
 		log.Printf("can't parse API response")
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
 	// TODO: serialize into struct
-	fmt.Fprintf(w, "%v", body)
+	fmt.Fprintf(w, "%v", tickers[0].PriceUsd)
 }
